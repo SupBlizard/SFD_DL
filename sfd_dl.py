@@ -30,7 +30,7 @@ def main(username, p):
     outfilename = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
 
     # Stitch tiles together to form the final render
-    stich_tiles(outfilename, tile_n)
+    stitch_tiles(outfilename, tile_n)
 
 # Get layer ID
 def get_layer_from_username(username):
@@ -62,17 +62,17 @@ def download_tiles(id, p):
             time.sleep(RATE_LIMIT)
 
 
-def stich_tiles(outfilename, tile_n):
-    stiched = Image.new("RGBA", (TILE_SIZE*tile_n["x"], TILE_SIZE*tile_n["y"]))
+def stitch_tiles(outfilename, tile_n):
+    final = Image.new("RGBA", (TILE_SIZE*tile_n["x"], TILE_SIZE*tile_n["y"]))
     print(f'Resolution: {TILE_SIZE*tile_n["x"]}x{TILE_SIZE*tile_n["y"]}')
 
     # Staircase syndrome
     for y in range(tile_n["y"]):
         for x in range(tile_n["y"]):
             with Image.open(f"tiles/Tile_Y{y}_X{x}.png") as tile:
-                stiched.paste(tile, (TILE_SIZE*x, TILE_SIZE*y))
+                final.paste(tile, (TILE_SIZE*x, TILE_SIZE*y))
    
-    stiched.save(outfilename, quality=100)
+    final.save(outfilename, quality=100)
 
 # Validate user parameters
 def validate_params(argv):
