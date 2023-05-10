@@ -8,7 +8,7 @@ TILE_SIZE  = 500
 RATE_LIMIT = 0.1
 
 
-def main(username, points):
+def main(username, p):
     try:
         layer_id = get_layer_from_username(username)
         print(layer_id)
@@ -24,9 +24,13 @@ def main(username, points):
         os.makedirs("tiles")
     
     # Download tiles to tile directory
-    download_tiles(layer_id, points)
+    download_tiles(layer_id, p)
 
+    tile_n = {"x":abs(p[1]["x"] - p[0]["x"]), "y":abs(p[1]["y"] - p[0]["y"])}
+    outfilename = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
 
+    # Stitch tiles together to form the final render
+    stich_tiles(outfilename, tile_n)
 
 # Get layer ID
 def get_layer_from_username(username):
@@ -39,7 +43,7 @@ def download_tiles(id, p):
     layer_API = f"https://img.superfreedraw.com/layers/1/layer_{id}/tiles/0/"
     for y in range(p[0]["y"], p[1]["y"]):
         for x in range(p[0]["x"], p[1]["x"]):
-            filename = f"tiles/Tile_Y{y-p[0]['y']}_X{x-p[0]['x']}.png"
+            filename = f'tiles/Tile_Y{y-p[0]["y"]}_X{x-p[0]["x"]}.png'
             if os.path.isfile(filename): continue
 
             try:
@@ -57,6 +61,18 @@ def download_tiles(id, p):
             # Ratelimit requests
             time.sleep(RATE_LIMIT)
 
+
+def stich_tiles(outfilename, tile_n):
+    stiched = Image.new("RGBA", (TILE_SIZE*tile_n["x"], TILE_SIZE*tile_n["y"]))
+    print(f'Resolution: {TILE_SIZE*tile_n["x"]}x{TILE_SIZE*tile_n["y"]}')
+
+    # Staircase syndrome
+    for y in range(tile_n["y"]):
+        for x in range(tile_n["y"]):
+            with Image.open(f"tiles/Tile_Y{y}_X{x}.png") as tile:
+                stiched.paste(tile, (TILE_SIZE*x, TILE_SIZE*y))
+   
+    stiched.save(outfilename, quality=100)
 
 # Validate user parameters
 def validate_params(argv):
