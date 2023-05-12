@@ -79,8 +79,10 @@ def get_layer_from_username(username):
 
 
 def validate_params(argv):
-    for i in range(1,5):
-        argv[i] = int(argv[i])
+    try:
+        for i in range(1,5): argv[i] = int(argv[i])
+    except ValueError:
+        raise ValueError("Error: coordinates must be integers")
 
     if len(argv) < 5:
         raise ValueError("Usage: python sfd_dl [username] [start.x] [start.y] [end.x] [end.y] \n\n"+
@@ -92,4 +94,7 @@ def validate_params(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], validate_params(sys.argv[1:])) 
+    try:
+        main(sys.argv[1], validate_params(sys.argv[1:]))
+    except Exception as e:
+        print(e, end="\n\n")
