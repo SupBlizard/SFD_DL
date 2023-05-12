@@ -1,4 +1,4 @@
-import os, sys, time
+import os, sys, time, io
 import json
 import urllib.request, urllib.parse, urllib.error
 from PIL import Image
@@ -18,13 +18,10 @@ def main(username, p):
     except urllib.error.HTTPError as e:
         print(f"User layer not found: {e}")
         return 1
-
-    # Create temp tile directory
-    if not os.path.exists("tiles"):
-        os.makedirs("tiles")
     
     # Download tiles to tile directory
-    download_tiles(layer_id, username, p)
+    outfile = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
+    download_tiles(layer_id, p, outfile)
     
 
 # Get layer ID
@@ -34,43 +31,33 @@ def get_layer_from_username(username):
 
 
 # Download tiles between the two points
-def download_tiles(id, username, p):
+def download_tiles(id, p, outfile):
     layer_API = f"https://img.superfreedraw.com/layers/1/layer_{id}/tiles/0/"
     res = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
     print(f'Resolution: {res[0]}x{res[1]}')
 
     final = Image.new("RGBA", (res[0], res[1]))
-    tile_ID = 0
 
     # todo: Loop through extra edge points
     for y in range(p[0]["y"], p[1]["y"]):
         for x in range(p[0]["x"], p[1]["x"]):
-            # print(x,y,x-p[0]["x"],y-p[0]["y"])
-            filename = f'tiles/{tile_ID}.png'
-
-            if not os.path.isfile(filename):
-                try:
-                    url = layer_API + f"{int(x < 0)*-1}_{int(y < 0)*-1}/{x}_{y}/{x}_{y}.png"
-                    urllib.request.urlretrieve(url,filename)
-                except urllib.error.HTTPError as e:
-                    if e.code != 404: raise e
-
-                    # Save blank tile
-                    Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None).save(filename, "PNG")
-            
-                # Re-encode tile
-                Image.open(filename).convert("RGBA").save(filename, "PNG")
+            tile = None
+            try:
+                url = layer_API + f"{int(x < 0)*-1}_{int(y < 0)*-1}/{x}_{y}/{x}_{y}.png"
+                with urllib.request.urlopen(url) as resp:
+                    tile = Image.open(io.BytesIO(resp.read()))
+            except urllib.error.HTTPError as e:
+                if e.code != 404: raise e
+                tile = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None)
                 
-            with Image.open(filename) as tile:
-                final.paste(tile, (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"])))
+            # Paste new tile onto final image
+            final.paste(tile, (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"])))
 
             # Ratelimit requests
             time.sleep(RATE_LIMIT)
-            tile_ID+=1
     
     # Save final render
-    outfilename = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
-    final.save(outfilename, quality=100)
+    final.save(outfile, quality=100)
 
 
 # Validate user parameters
