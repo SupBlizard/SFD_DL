@@ -40,9 +40,10 @@ def download_tiles(layer_url, resolution, selection, points, outfile):
         for x in range(points[0]["x"], points[1]["x"]):
             print(f"[{str(count).zfill(len(selection))}/{selection}]: ", end="")
             try:
-                url = f"{serialise_zoom(x,y,0)}/{x}_{y}/{x}_{y}.png"
+                z = get_zoom(x,y,0)
+                url = f"{z[0]}_{z[1]}/{x}_{y}/{x}_{y}.png"
                 tile = Image.open(io.BytesIO(urllib.request.urlopen(layer_url + url).read()))
-                print(format_tile_url(url))
+                print_tile_url(x,y,z)
             except urllib.error.HTTPError as e:
                 if e.code != 404: raise e
                 tile = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None)
@@ -59,18 +60,22 @@ def download_tiles(layer_url, resolution, selection, points, outfile):
     final.save(outfile, quality=100)
 
 
-def format_tile_url(url):
-    url = url.split("/")
-    return f"{url[0].rjust(5,' ')}/{url[1].rjust(5,' ')}/{url[2].rjust(9,' ')}"
+def print_tile_url(x,y,z):
+    x, y = format_coord((x,y))
+    z = format_coord(z)
+    print(f"... /{z[0]}_{z[1]}/{x}_{y}/{x}_{y}.png")
 
+
+def format_coord(c):
+    return (str(c[0]).rjust(2," "), str(c[1]).rjust(2," "))
 
 def get_offset(x,y,p):
     return (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"]))
 
 
-def serialise_zoom(x,y,z):
+def get_zoom(x,y,z):
     # todo: add zoom scalar
-    return f"{int(x < 0)*-1}_{int(y < 0)*-1}"
+    return (int(x < 0)*-1, int(y < 0)*-1)
 
 
 def get_layer_from_username(username):
