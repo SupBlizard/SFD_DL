@@ -1,15 +1,19 @@
-import os, sys, time, io, json
-import urllib.request, urllib.parse, urllib.error
+import sys, time, io, json
+import urllib.request, urllib.error
 from PIL import Image
 
 
-# Rate limit can be changed to your liking. Keep in mind to not overload the servers
+# Rate limit can be changed to your liking. Please do not overload the servers
 RATE_LIMIT = 0.1
-TILE_SIZE    = 500
+TILE_SIZE  = 500
+
 
 def main(username, p):
+    get_user_layer = f"https://www.superfreedraw.com/api/v1/getLayerByName/{username}"
+    layer_url = "https://img.superfreedraw.com/layers/1/layer_%s/tiles/0/"
+    
     try:
-        layer_id = get_layer_from_username(username)
+        layer_url = layer_url % (json.loads(urllib.request.urlopen(get_user_layer).read())["data"]["id"])
     except urllib.error.URLError as e:
         print(f"Could not connect to the server: {e}")
         return 1
@@ -17,25 +21,26 @@ def main(username, p):
         print(f"User layer not found: {e}")
         return 1
     
-    layer_url = f"https://img.superfreedraw.com/layers/1/layer_{layer_id}/tiles/0/"
+    
     outfile = f"{username} ({p[0]['x']},{p[0]['y']}) to ({p[1]['x']},{p[1]['y']}).png"
     resolution = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
     selection = str((p[1]['x']-p[0]['x'])*(p[1]['y']-p[0]['y']))
 
     # Print information
-    print(f"Layer ID:   {layer_id} ({username})")
+    print(f"Layer:      {username}")
     print(f"Resolution: {resolution[0]}x{resolution[1]}")
     print(f"Selection:  {selection} tiles \n")
 
     # Download tiles to tile directory and get filesize
     download_tiles(layer_url, resolution, selection, p, outfile)
-
     print(f'\nFinished, saved at "./{outfile}"\n')
     
+
 
 def download_tiles(layer_url, resolution, selection, points, outfile):
     final, count = (Image.new("RGBA", resolution), 0)
 
+    # Loop through all tiles
     for y in range(points[0]["y"], points[1]["y"]):
         for x in range(points[0]["x"], points[1]["x"]):
             print(f"[{str(count).zfill(len(selection))}/{selection}]: ", end="")
@@ -60,6 +65,7 @@ def download_tiles(layer_url, resolution, selection, points, outfile):
     final.save(outfile, quality=100)
 
 
+
 def print_tile_url(x,y,z):
     x, y = format_coord((x,y))
     z = format_coord(z)
@@ -69,6 +75,7 @@ def print_tile_url(x,y,z):
 def format_coord(c):
     return (str(c[0]).rjust(2," "), str(c[1]).rjust(2," "))
 
+
 def get_offset(x,y,p):
     return (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"]))
 
@@ -76,11 +83,6 @@ def get_offset(x,y,p):
 def get_zoom(x,y,z):
     # todo: add zoom scalar
     return (int(x < 0)*-1, int(y < 0)*-1)
-
-
-def get_layer_from_username(username):
-    with urllib.request.urlopen(f"https://www.superfreedraw.com/api/v1/getLayerByName/{username}") as resp:
-        return json.loads(resp.read())["data"]["id"]
 
 
 def validate_params(argv):
@@ -93,7 +95,7 @@ def validate_params(argv):
         raise ValueError("Usage: python sfd_dl [username] [start.x] [start.y] [end.x] [end.y] \n\n"+
         "Example: python sfd_dl uncat -5 -10 3 -1")
     if argv[1] > argv[3] or argv[2] > argv[4]:
-        raise ValueError("Error: end point axis must be bigger than start point")
+        raise ValueError("Error: end coordinate must be bigger than the start (bottom right)")
 
     return [{"x":argv[1],"y":argv[2]},{"x":argv[3],"y":argv[4]}]
 
