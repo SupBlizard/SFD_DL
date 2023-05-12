@@ -24,13 +24,8 @@ def main(username, p):
         os.makedirs("tiles")
     
     # Download tiles to tile directory
-    download_tiles(layer_id, p)
-
-    tile_n = {"x":abs(p[1]["x"] - p[0]["x"]), "y":abs(p[1]["y"] - p[0]["y"])}
-    outfilename = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
-
-    # Stitch tiles together to form the final render
-    stitch_tiles(outfilename, tile_n)
+    download_tiles(layer_id, username, p)
+    
 
 # Get layer ID
 def get_layer_from_username(username):
@@ -39,40 +34,44 @@ def get_layer_from_username(username):
 
 
 # Download tiles between the two points
-def download_tiles(id, p):
+def download_tiles(id, username, p):
     layer_API = f"https://img.superfreedraw.com/layers/1/layer_{id}/tiles/0/"
+    res = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
+    print(f'Resolution: {res[0]}x{res[1]}')
+
+    final = Image.new("RGBA", (res[0], res[1]))
+    tile_ID = 0
+
+    # todo: Loop through extra edge points
     for y in range(p[0]["y"], p[1]["y"]):
         for x in range(p[0]["x"], p[1]["x"]):
-            filename = f'tiles/Tile_Y{y-p[0]["y"]}_X{x-p[0]["x"]}.png'
-            if os.path.isfile(filename): continue
+            # print(x,y,x-p[0]["x"],y-p[0]["y"])
+            filename = f'tiles/{tile_ID}.png'
 
-            try:
-                url = layer_API + f"{int(x < 0)*-1}_{int(y < 0)*-1}/{x}_{y}/{x}_{y}.png"
-                urllib.request.urlretrieve(url,filename)
-            except urllib.error.HTTPError as e:
-                if e.code != 404: raise e
+            if not os.path.isfile(filename):
+                try:
+                    url = layer_API + f"{int(x < 0)*-1}_{int(y < 0)*-1}/{x}_{y}/{x}_{y}.png"
+                    urllib.request.urlretrieve(url,filename)
+                except urllib.error.HTTPError as e:
+                    if e.code != 404: raise e
 
-                # Save blank tile
-                Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None).save(filename, "PNG")
+                    # Save blank tile
+                    Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None).save(filename, "PNG")
             
-            # Re-encode tile
-            Image.open(filename).convert("RGBA").save(filename, "PNG")
+                # Re-encode tile
+                Image.open(filename).convert("RGBA").save(filename, "PNG")
+                
+            with Image.open(filename) as tile:
+                final.paste(tile, (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"])))
 
             # Ratelimit requests
             time.sleep(RATE_LIMIT)
-
-
-def stitch_tiles(outfilename, tile_n):
-    final = Image.new("RGBA", (TILE_SIZE*tile_n["x"], TILE_SIZE*tile_n["y"]))
-    print(f'Resolution: {TILE_SIZE*tile_n["x"]}x{TILE_SIZE*tile_n["y"]}')
-
-    # Staircase syndrome
-    for y in range(tile_n["y"]):
-        for x in range(tile_n["y"]):
-            with Image.open(f"tiles/Tile_Y{y}_X{x}.png") as tile:
-                final.paste(tile, (TILE_SIZE*x, TILE_SIZE*y))
-   
+            tile_ID+=1
+    
+    # Save final render
+    outfilename = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
     final.save(outfilename, quality=100)
+
 
 # Validate user parameters
 def validate_params(argv):
