@@ -1,19 +1,15 @@
-import os, sys, time, io
-import json
+import os, sys, time, io, json
 import urllib.request, urllib.parse, urllib.error
 from PIL import Image
 
 
 # Rate limit can be changed to your liking. Keep in mind to not overload the servers
 RATE_LIMIT = 0.1
-
-# DO NOT CHANGE, THIS IS A CONSTANT
 TILE_SIZE  = 500
 
 def main(username, p):
     try:
         layer_id = get_layer_from_username(username)
-        print(layer_id)
     except urllib.error.URLError as e:
         print(f"Could not connect to the server: {e}")
         return 1
@@ -22,31 +18,43 @@ def main(username, p):
         return 1
     
     layer_url = f"https://img.superfreedraw.com/layers/1/layer_{layer_id}/tiles/0/"
+    outfile = f"{username} ({p[0]['x']},{p[0]['y']}) to ({p[1]['x']},{p[1]['y']}).png"
+
     resolution = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
-    outfile = f'{username} ({p[0]["x"]},{p[0]["y"]}) to ({p[1]["x"]},{p[1]["y"]}).png'
-
-    # Print layer selection information
-    print(f'Resolution: {res[0]}x{res[1]}')
-
-    # Download tiles to tile directory
-    download_tiles(layer_url, p, resolution, outfile)
+    selection = (p[1]['x']-p[0]['x'])*(p[1]['y']-p[0]['y'])
     
 
-def download_tiles(resolution, points, outfile):
-    final = Image.new("RGBA", resolution)
+    # Print information
+    print(f"Layer ID:   {layer_id} ({username})")
+    print(f"Resolution: {resolution[0]}x{resolution[1]}")
+    print(f"Selection:  {selection} tiles \n")
 
-    # todo: Loop through extra edge points
+
+    # Download tiles to tile directory and get filesize
+    download_tiles(layer_url, resolution, selection, p, outfile)
+
+    print(f'\nFinished, saved at "./{outfile}"\n')
+    
+
+def download_tiles(layer_url, resolution, selection, points, outfile):
+    final = Image.new("RGBA", resolution)
+    c = 0
+
     for y in range(points[0]["y"], points[1]["y"]):
         for x in range(points[0]["x"], points[1]["x"]):
+            print(f"[{c}/{selection}]: ", end="")
             try:
-                url = layer_API + f"{serialise_zoom(x,y,0)}/{x}_{y}/{x}_{y}.png"
-                tile = Image.open(io.BytesIO(urllib.request.urlopen(url).read()))
+                url = f"{serialise_zoom(x,y,0)}/{x}_{y}/{x}_{y}.png"
+                tile = Image.open(io.BytesIO(urllib.request.urlopen(layer_url + url).read()))
+                print(f"{url}")
             except urllib.error.HTTPError as e:
                 if e.code != 404: raise e
                 tile = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None)
+                print("Empty tile, skipping")
                 
             # Paste new tile onto final image
             final.paste(tile, get_offset(x, y, points))
+            c+=1
 
             # Ratelimit requests
             time.sleep(RATE_LIMIT)
