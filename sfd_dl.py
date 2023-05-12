@@ -7,7 +7,6 @@ from PIL import Image
 RATE_LIMIT = 0.1
 TILE_SIZE  = 500
 
-
 def main(username, p):
     get_user_layer = f"https://www.superfreedraw.com/api/v1/getLayerByName/{username}"
     layer_url = "https://img.superfreedraw.com/layers/1/layer_%s/tiles/0/"
@@ -39,21 +38,22 @@ def main(username, p):
 
 def download_tiles(layer_url, resolution, selection, points, outfile):
     final, count = (Image.new("RGBA", resolution), 0)
+    start = time.perf_counter()
 
     # Loop through all tiles
     for y in range(points[0]["y"], points[1]["y"]):
         for x in range(points[0]["x"], points[1]["x"]):
-            print(f"[{str(count).zfill(len(selection))}/{selection}]: ", end="")
+            progress = f"[{str(count+1).zfill(len(selection))}/{selection}]: "
             try:
                 z = get_zoom(x,y,0)
                 url = f"{z[0]}_{z[1]}/{x}_{y}/{x}_{y}.png"
                 tile = Image.open(io.BytesIO(urllib.request.urlopen(layer_url + url).read()))
-                print_tile_url(x,y,z)
+                print(progress, format_tile_url(x,y,z))
             except urllib.error.HTTPError as e:
                 if e.code != 404: raise e
                 tile = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None)
-                print("Empty tile, skipping")
-                
+                print(progress, "... 404 - Empty tile")
+
             # Paste new tile onto final image
             final.paste(tile, get_offset(x, y, points))
             count += 1
@@ -65,15 +65,14 @@ def download_tiles(layer_url, resolution, selection, points, outfile):
     final.save(outfile, quality=100)
 
 
-
-def print_tile_url(x,y,z):
+def format_tile_url(x,y,z):
     x, y = format_coord((x,y))
     z = format_coord(z)
-    print(f"... /{z[0]}_{z[1]}/{x}_{y}/{x}_{y}.png")
+    return f"... /{z[0]}_{z[1]}/{x}_{y}/{x}_{y}.png"
 
 
 def format_coord(c):
-    return (str(c[0]).rjust(2," "), str(c[1]).rjust(2," "))
+    return [str(c[i]).rjust(len(str(c[i])) + (0 if c[i] < 0 else 1)," ") for i in range(len(c))]
 
 
 def get_offset(x,y,p):
@@ -105,3 +104,6 @@ if __name__ == "__main__":
         main(sys.argv[1], validate_params(sys.argv[1:]))
     except Exception as e:
         print(e, end="\n\n")
+        raise e
+    except KeyboardInterrupt:
+        print("\nAborting ....")
