@@ -1,4 +1,4 @@
-import sys, time, io, json
+import sys, time, io, json, math
 import urllib.request, urllib.error
 from PIL import Image
 
@@ -19,7 +19,6 @@ def main(username, p):
     except urllib.error.HTTPError as e:
         print(f"User layer not found: {e}")
         return 1
-    
     
     outfile = f"{username} ({p[0]['x']},{p[0]['y']}) to ({p[1]['x']},{p[1]['y']}).png"
     resolution = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
@@ -96,7 +95,10 @@ def validate_params(argv):
     if argv[1] > argv[3] or argv[2] > argv[4]:
         raise ValueError("Error: end coordinate must be bigger than the start (bottom right)")
 
-    return [{"x":argv[1],"y":argv[2]},{"x":argv[3],"y":argv[4]}]
+    return [
+        {"x":math.ceil(argv[1]/(TILE_SIZE)),"y":math.ceil(argv[2]/(TILE_SIZE))},
+        {"x":math.ceil(argv[3]/(TILE_SIZE)),"y":math.ceil(argv[4]/(TILE_SIZE))}
+    ]
 
 
 if __name__ == "__main__":
