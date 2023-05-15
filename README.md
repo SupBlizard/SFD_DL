@@ -22,7 +22,7 @@ the coordinates by positioning your screen so the point you want is in the cente
 Zoom is optional as it is 0 by default. In this case 0 is actually a 1:1 picture of your selection while 7 is the maximum you can zoom out (2^7 being 128 or 1:128 as it says on the website)
 
 
-### Example
+#### Heres an example
 If we look around [this layer](https://www.superfreedraw.com/wirisuzret4rn) for example
 ![A layer selection](https://raw.githubusercontent.com/SupBlizard/SFD_DL/main/screenshots/example.png)
 If we decide that we want to get all of the tiles from `(-1900,-2000)` to `(950,-50)` then we can just type:
@@ -31,14 +31,11 @@ If we decide that we want to get all of the tiles from `(-1900,-2000)` to `(950,
 
 It is not nessesary to enter anything for zoom as you probably want a 1:1 download of the tiles 90% of the tiles. But if you do want a more lower quality picture you can set the zoom argument up until 7.
 
-<br>
-
 While the program runs you should see something like this:
 
 ![The program log](https://raw.githubusercontent.com/SupBlizard/SFD_DL/main/screenshots/log-example.png)
 
 And after it finishes you should have the final picture in the same directory as the program !
-
 (The coordinates in the file are tile coordinates not pixel coordinates)
 
 ![Result](https://raw.githubusercontent.com/SupBlizard/SFD_DL/main/screenshots/final-example.png)
