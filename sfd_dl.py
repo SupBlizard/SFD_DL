@@ -86,7 +86,7 @@ def validate_params(argv):
         raise ValueError("Error: End coordinate must be bigger than the start (bottom right)")
     
     zoom = 0
-    if len(argv) > 4:
+    if len(argv) > 5:
         zoom = int(argv[5])
         if zoom > 7 or zoom < 0: raise ValueError("Error: Zoom can only go from 0 to 7 (0 is maximum quality)")
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     try:
         if len(sys.argv) == 1:
             print("SFD_DL - A SuperFreeDraw Downloader\n")
-            print("Usage: python sfd_dl [username] [start.x] [start.y] [end.x] [end.y] [zoom]")
+            print("Usage: python sfd_dl.py [username] [start.x] [start.y] [end.x] [end.y] [zoom]")
         main(sys.argv[1], validate_params(sys.argv[1:]))
     except Exception as e:
         print(e, end="\n\n")
