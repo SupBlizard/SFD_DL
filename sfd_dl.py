@@ -14,7 +14,7 @@ def main(username, p):
     except urllib.error.URLError as e:
         raise ValueError(f"Error: Could not connect to the server: {e}")
     except urllib.error.HTTPError as e:
-        raise ValueError(f"Error: User layer not found: {e}")
+        raise ValueError(f"Error: Layer not found: {e}")
     
     layer_url = f"https://img.superfreedraw.com/layers/{int(layer_id/1000)}/layer_{layer_id}/tiles/"
     outfile = f"{username} ({p[0]['x']},{p[0]['y']}) to ({p[1]['x']},{p[1]['y']}).png"
@@ -101,7 +101,7 @@ if __name__ == "__main__":
     try:
         if len(sys.argv) == 1:
             print("SFD_DL - A SuperFreeDraw Downloader\n")
-            print("Usage: python sfd_dl.py [username] [start.x] [start.y] [end.x] [end.y] [zoom]")
+            print("Usage: python sfd_dl.py [name] [start.x] [start.y] [end.x] [end.y] [zoom]")
         main(sys.argv[1], validate_params(sys.argv[1:]))
     except Exception as e:
         print(e, end="\n\n")

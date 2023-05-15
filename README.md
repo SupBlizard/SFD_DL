@@ -9,10 +9,10 @@ I made this because I wanted to download my own layer but the service did not pr
 
 This program has the following arguments:
 
-`python sfd_dl.py [username] [start.x] [start.y] [end.x] [end.y] [zoom]`
+`python sfd_dl.py [name] [start.x] [start.y] [end.x] [end.y] [zoom]`
 
-- Username -
-The username of the layer owner as it apears on the URL.
+- Name -
+The name of the layer as it apears on the URL.
 
 - Start -> End - 
 This is where you put the start coordinate and the end coordinate. You can find
