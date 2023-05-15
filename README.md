@@ -1,5 +1,5 @@
 # SuperFreeDraw DL
-This is a basic utility tool for downloading tiles stored on [superfreedraw.com](superfreedraw.com) and stiching them together into a single final image for your own use.
+This is a basic utility tool for downloading tiles stored on [superfreedraw.com](https://www.superfreedraw.com) and stiching them together into a single final image for your own use.
 
 I made this because I wanted to download my own layer but the service did not provide any way for users to download their own stuff which annoyed me a bit. So I ended up finding out how the website worked and got to work on this small program !
 
