@@ -8,16 +8,15 @@ RATE_LIMIT = 0.1
 TILE_SIZE  = 500
 
 def main(username, p):
-    get_user_layer = f"https://www.superfreedraw.com/api/v1/getLayerByName/{username}"
-    layer_url = "https://img.superfreedraw.com/layers/1/layer_%s/tiles/"
-    
     try:
-        layer_url = layer_url % (json.loads(urllib.request.urlopen(get_user_layer).read())["data"]["id"])
+        get_user_layer = f"https://www.superfreedraw.com/api/v1/getLayerByName/{username}"
+        layer_id = json.loads(urllib.request.urlopen(get_user_layer).read())["data"]["id"]
     except urllib.error.URLError as e:
         raise ValueError(f"Error: Could not connect to the server: {e}")
     except urllib.error.HTTPError as e:
         raise ValueError(f"Error: User layer not found: {e}")
     
+    layer_url = f"https://img.superfreedraw.com/layers/{int(layer_id/1000)}/layer_{layer_id}/tiles/"
     outfile = f"{username} ({p[0]['x']},{p[0]['y']}) to ({p[1]['x']},{p[1]['y']}).png"
     resolution = (abs(p[0]["x"] - p[1]["x"])*TILE_SIZE, abs(p[0]["y"] - p[1]["y"])*TILE_SIZE)
     selection = str((p[1]['x']-p[0]['x'])*(p[1]['y']-p[0]['y']))
@@ -42,14 +41,14 @@ def download_tiles(layer_url, resolution, selection, p, z, outfile):
         for x in range(p[0]["x"], p[1]["x"]):
             progress = f"[{str(count+1).zfill(len(selection))}/{selection}]: "
             try:
-                q = (int(x < 0)*-1, int(y < 0)*-1)
+                q = (math.floor(x/100),math.floor(y/100))
                 url = f"{z}/{q[0]}_{q[1]}/{x}_{y}/{x}_{y}.png"
                 tile = Image.open(io.BytesIO(urllib.request.urlopen(layer_url + url).read()))
                 progress += format_tile_url(x,y,z,q)
             except urllib.error.HTTPError as e:
                 if e.code != 404: raise e
                 tile = Image.new("RGBA", (TILE_SIZE, TILE_SIZE), None)
-                progress += "... 404 - Empty tile"
+                progress += format_tile_url(x,y,z,q)+" ... 404 - Empty tile"
 
             # Paste new tile onto final image
             final.paste(tile, (TILE_SIZE*(x-p[0]["x"]), TILE_SIZE*(y-p[0]["y"])))
